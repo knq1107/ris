@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Requisition and Issue Slip | PCC</title>
+<style>
+  :root { --ink:#000; --muted:#555; --line:#000; --soft:#f2f2ef; --accent:#1f6f43; --accent-soft:#e3f1e8; --danger:#b42318; --danger-soft:#fdecea;
+          --warn:#8a5a00; --warn-soft:#fff4d6; }
+  * { box-sizing:border-box; }
+  html { -webkit-text-size-adjust:100%; }
+  body { margin:0; background:#e9e9e6; color:var(--ink); font:15px/1.45 Arial, Helvetica, "Liberation Sans", sans-serif; }
+  [hidden] { display:none !important; }
+  .page { background:#fff; max-width:760px; margin:0 auto; padding:18px 14px 28px; min-height:100vh; }
+  @media (min-width:700px) { body { padding:24px 0; } .page { padding:36px 48px 36px; min-height:0; border:1px solid #d6d6d2; } }
+  .intro { margin:0 0 14px; padding:10px 12px; border-radius:8px; background:var(--accent-soft); color:#16452b; font-size:14px; }
+  .intro b { display:block; margin-bottom:2px; }
+
+  /* ---------- The slip, drawn like the paper form ---------- */
+  .slip { border:3px double var(--line); font-family:Calibri, Carlito, "Segoe UI", Arial, sans-serif; font-size:15px; line-height:1.3; }
+  .sec { border-bottom:3px double var(--line); }
+  .sec:last-child { border-bottom:0; }
+  .head { text-align:center; padding:14px 6px 12px; }
+  .head .t1 { font-weight:bold; font-size:clamp(15px, 4.4vw, 19px); }
+  .head .t2 { font-size:clamp(13px, 3.8vw, 16px); }
+  .info { padding:5px 9px 9px; font-weight:bold; }
+  .kv { display:grid; grid-template-columns:64px 12px 1fr; }
+  .purpose { text-align:center; margin-top:4px; }
+  .req-title { text-align:center; font-weight:bold; font-size:12.5px; letter-spacing:.35em; padding:1px 0; border-bottom:1px solid var(--line); }
+  table.items { width:100%; border-collapse:collapse; table-layout:fixed; }
+  table.items th, table.items td { border:1px solid var(--line); padding:3px 4px; vertical-align:middle; }
+  table.items tr > :first-child { border-left:0; }
+  table.items tr > :last-child { border-right:0; }
+  table.items tbody tr:last-child td { border-bottom:0; }
+  table.items th { height:36px; }
+  table.items td.c { text-align:center; }
+  table.items td.d { word-wrap:break-word; }
+  tr.nothing td { text-align:center; }
+  tr.blank td { height:13px; padding:0; }
+  .sign { display:grid; grid-template-columns:1.35fr 3px 1fr; }
+  .sign .mid { background:repeating-linear-gradient(to right, var(--line) 0 1px, transparent 1px 2px, var(--line) 2px 3px); }
+  .box { padding:3px 8px 6px; text-align:center; }
+  .box .lbl { text-align:left; margin-bottom:12px; }
+  .box .nm { font-weight:bold; text-decoration:underline; text-underline-offset:2px; word-wrap:break-word; }
+  .box .dt { text-decoration:underline; text-underline-offset:2px; min-height:1.3em; }
+  .recv { padding:4px 8px 10px; }
+  .ref { text-align:right; font-size:12px; color:var(--muted); font-family:Calibri, Carlito, Arial, sans-serif; margin:3px 0 0; }
+
+  /* ---------- Received by: signature, name, date ---------- */
+  .sig-area { max-width:420px; margin:6px auto 0; font-family:Arial, Helvetica, sans-serif; font-size:14px; }
+  .sig-mode { display:flex; border:1px solid #bdbdb7; border-radius:8px; overflow:hidden; margin:0 0 6px; }
+  .sig-mode button { flex:1; border:0; border-radius:0; background:#fff; color:var(--ink); padding:7px 6px; font-size:13.5px; }
+  .sig-mode button + button { border-left:1px solid #bdbdb7; }
+  .sig-mode button[aria-selected="true"] { background:var(--accent); color:#fff; font-weight:bold; }
+  .pad-box { position:relative; aspect-ratio:3 / 1; background:#fff; border:1px dashed #9a9a94; border-radius:6px; }
+  #pad { position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:crosshair; border-radius:6px; }
+  .pad-line { position:absolute; left:7%; right:7%; bottom:22%; border-bottom:1px solid var(--line); pointer-events:none; }
+  .pad-hint { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#a3a39c; pointer-events:none; font-size:14px; }
+  .pad-actions { margin:6px 0 0; display:flex; justify-content:space-between; align-items:center; gap:12px; font-size:12px; color:var(--muted); }
+  .drop { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; text-align:center;
+          min-height:120px; padding:12px; border:1.5px dashed #9a9a94; border-radius:6px; background:#fafaf7; cursor:pointer; }
+  .drop input { position:absolute; width:1px; height:1px; opacity:0; }
+  .drop:focus-within { outline:2px solid var(--accent); outline-offset:2px; }
+  .drop-main { font-weight:bold; color:var(--accent); }
+  .drop-sub { font-size:12px; color:var(--muted); line-height:1.4; }
+  .preview-box { display:flex; align-items:center; justify-content:center; border-style:solid; }
+  .preview-box img { position:relative; width:100%; height:100%; object-fit:contain; border-radius:6px; }
+  .preview-line { left:4%; right:4%; bottom:30%; }
+  .up-checking { margin:8px 0 0; font-size:13px; color:var(--muted); text-align:center; }
+  .up-err { margin:8px 0 0; padding:10px 12px; border-radius:6px; background:var(--danger-soft); color:var(--danger); font-size:13px; line-height:1.4; text-align:left; }
+  .up-err b { display:block; margin-bottom:2px; }
+  .names { display:grid; grid-template-columns:1.3fr 1fr; gap:8px; margin:10px 0 0; }
+  .names label { display:block; font-size:12px; color:var(--muted); text-align:left; }
+  .names input { width:100%; font:inherit; font-size:15px; border:0; border-bottom:1px solid var(--line); border-radius:0; padding:4px 2px 3px; background:transparent; text-align:center; }
+  .names input#rName { font-weight:bold; }
+  .names input:focus { outline:none; border-bottom:2px solid var(--accent); padding-bottom:2px; background:#fbfbf7; }
+  .names input::placeholder { color:#b5b5ae; font-weight:normal; }
+  .cap { text-align:center; font-family:Calibri, Carlito, "Segoe UI", Arial, sans-serif; font-size:15px; margin-top:4px; }
+  .date-line { width:55%; margin:12px auto 0; border-bottom:1px solid var(--line); text-align:center; font-family:Calibri, Carlito, Arial, sans-serif; padding:2px 0; }
+  .date-note { text-align:center; font-size:11.5px; color:var(--muted); }
+  [data-field].has-error .pad-box, [data-field].has-error .drop { border-color:var(--danger); }
+  [data-field].has-error input { border-bottom-color:var(--danger); }
+  .err { color:var(--danger); font-size:13px; margin-top:4px; display:none; font-family:Arial, sans-serif; }
+  .has-error > .err, .has-error .err.own, .err.show { display:block; }
+
+  /* ---------- Photos, email, consent, submit ---------- */
+  .block { margin:22px 0 0; }
+  .block h2 { font-size:15px; margin:0 0 4px; }
+  .block .sub { font-size:13px; color:var(--muted); margin:0 0 8px; }
+  .photos { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .ph { position:relative; aspect-ratio:4 / 3; border:1.5px dashed #9a9a94; border-radius:8px; background:#fafaf7; display:flex; align-items:center;
+        justify-content:center; overflow:hidden; text-align:center; }
+  .ph label { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; color:var(--accent); font-weight:bold; font-size:14px; padding:6px; }
+  .ph label span { font-weight:normal; color:var(--muted); font-size:12px; }
+  .ph input { position:absolute; width:1px; height:1px; opacity:0; }
+  .ph:focus-within { outline:2px solid var(--accent); outline-offset:2px; }
+  .ph.filled { border-style:solid; border-color:#cfcfc9; background:#fff; }
+  .ph img { width:100%; height:100%; object-fit:cover; }
+  .ph .rm { position:absolute; top:6px; right:6px; border:0; border-radius:14px; background:rgba(0,0,0,.65); color:#fff; padding:3px 10px; font-size:12.5px; }
+  .ph .meta { position:absolute; left:0; right:0; bottom:0; background:rgba(0,0,0,.55); color:#fff; font-size:11px; padding:2px 6px; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .photo-msg { margin:8px 0 0; font-size:13px; color:var(--muted); }
+  .photo-err { margin:8px 0 0; padding:10px 12px; border-radius:6px; background:var(--danger-soft); color:var(--danger); font-size:13px; line-height:1.4; }
+  .photo-err b { display:block; margin-bottom:2px; }
+  .email input { width:100%; font:inherit; font-size:15px; padding:9px 10px; border:1px solid #c5c5bf; border-radius:8px; }
+  .email input:focus { outline:2px solid var(--accent); outline-offset:-1px; }
+  .email.has-error input { border-color:var(--danger); background:var(--danger-soft); }
+  .consent { margin:22px 0 0; padding:12px; background:var(--soft); border-radius:8px; font-size:13px; line-height:1.45; }
+  .consent p { margin:0 0 10px; color:#333; }
+  .consent label { display:flex; gap:10px; align-items:flex-start; cursor:pointer; font-size:14px; color:var(--ink); }
+  .consent input { width:20px; height:20px; margin:0; flex:none; accent-color:var(--accent); }
+  .consent.has-error { outline:1px solid var(--danger); }
+  button { font:inherit; cursor:pointer; border-radius:8px; }
+  .btn-light { background:#fff; border:1px solid #bdbdb7; padding:5px 14px; color:var(--ink); flex:none; }
+  .btn-primary { display:block; width:100%; margin:18px 0 0; background:var(--accent); color:#fff; border:0; padding:14px; font-size:17px; font-weight:bold; }
+  .btn-primary:disabled { opacity:.6; cursor:wait; }
+  .form-error { color:var(--danger); text-align:center; font-size:14px; margin:12px 0 0; }
+  .trap { position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
+  .problem { margin:4px 0 0; font-size:13px; color:var(--muted); text-align:center; }
+
+  /* ---------- Messages ---------- */
+  .msg { text-align:center; padding:40px 6px 20px; }
+  .msg .icon { width:56px; height:56px; margin:0 auto 12px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:bold; }
+  .msg .ok { background:var(--accent-soft); color:var(--accent); }
+  .msg .bad { background:var(--danger-soft); color:var(--danger); }
+  .msg .warn { background:var(--warn-soft); color:var(--warn); }
+  .msg h2 { font-size:20px; margin:0 0 8px; }
+  .msg p { margin:0 0 10px; }
+  .msg .ref-big { font-size:22px; font-weight:bold; letter-spacing:.5px; margin:4px 0 12px; color:var(--accent); }
+  .msg .hint { font-size:13px; color:var(--muted); }
+  .loading-dot { width:40px; height:40px; margin:0 auto 14px; border-radius:50%; border:4px solid var(--accent-soft); border-top-color:var(--accent); animation:spin .9s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .retry { margin-top:6px; border:1px solid var(--accent); background:#fff; color:var(--accent); font:inherit; font-weight:bold; padding:9px 22px; border-radius:8px; }
+
+  /* ---------- Loading screen ---------- */
+  .busy { position:fixed; inset:0; z-index:1000; display:flex; align-items:center; justify-content:center; padding:24px;
+          background:rgba(233,233,230,.85); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); touch-action:none; }
+  .busy-card { background:#fff; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.18); padding:26px 22px 22px; width:100%; max-width:320px; text-align:center; }
+  .spinner { width:46px; height:46px; margin:0 auto 14px; border-radius:50%; border:4px solid var(--accent-soft); border-top-color:var(--accent); animation:spin .9s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation-duration:2.5s; } }
+  .busy-title { font-weight:bold; font-size:17px; margin:0 0 6px; }
+  .busy-sub { font-size:13px; color:var(--muted); line-height:1.45; margin:0; }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <!-- While the slip loads, or if it cannot be loaded -->
+  <section class="msg" id="loadView">
+    <div class="loading-dot" id="loadDot"></div>
+    <h2 id="loadTitle">Loading the slip…</h2>
+    <p id="loadText"></p>
+    <button type="button" class="retry" id="loadRetry" hidden>Try again</button>
+  </section>
+
+  <!-- Messages for links that cannot be signed -->
+  <section class="msg" id="msgView" hidden>
+    <div class="icon" id="msgIcon"></div>
+    <h2 id="msgTitle"></h2>
+    <p id="msgText"></p>
+    <p class="hint" id="msgHint"></p>
+  </section>
+
+  <!-- The slip to acknowledge -->
+  <form id="ackForm" novalidate autocomplete="off" hidden>
+    <div class="trap" aria-hidden="true"><label>Leave this empty <input type="text" id="website" tabindex="-1" autocomplete="off"></label></div>
+
+    <div class="intro"><b>Please check the items below.</b>If you received everything, sign under "Received by" and tap
+      <i>Acknowledge receipt</i>. If something is missing or wrong, do not sign; contact the issuer.</div>
+
+    <div class="slip">
+      <div class="sec head">
+        <div class="t1">PCC BIOSAFETY AND ENVIRONMENT SECTION</div>
+        <div class="t2">REQUISITION AND ISSUE SLIP</div>
+      </div>
+      <div class="sec info">
+        <div class="kv"><span>Division</span><span>:</span><span id="division"></span></div>
+        <div class="kv"><span>Office</span><span>:</span><span id="office"></span></div>
+        <div class="purpose" id="purpose"></div>
+      </div>
+      <div class="sec req">
+        <div class="req-title">REQUISITION</div>
+        <table class="items">
+          <colgroup><col style="width:12%"><col style="width:15%"><col><col style="width:13%"></colgroup>
+          <thead><tr><th>No.</th><th>Unit</th><th>Description</th><th>Qty</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="sec sign">
+        <div class="box">
+          <div class="lbl">Issued by:</div>
+          <div class="nm" id="issuedName"></div>
+          <div id="issuedPosition"></div>
+          <div class="dt" id="issuedDate"></div>
+          <div>Date</div>
+        </div>
+        <div class="mid" aria-hidden="true"></div>
+        <div class="box">
+          <div class="lbl">Noted by:</div>
+          <div class="nm" id="notedName"></div>
+          <div id="notedPosition"></div>
+          <div class="dt" id="notedDate"></div>
+          <div>Date</div>
+        </div>
+      </div>
+      <div class="sec recv">
+        <div>Received by:</div>
+        <div class="sig-area">
+          <div data-field="signature">
+            <div class="sig-mode" id="sigMode" role="tablist" aria-label="How to sign" hidden>
+              <button type="button" role="tab" id="modeDraw" aria-selected="true" aria-controls="drawPanel">Draw signature</button>
+              <button type="button" role="tab" id="modeUpload" aria-selected="false" aria-controls="uploadPanel">Upload PNG</button>
+            </div>
+            <div id="drawPanel" role="tabpanel">
+              <div class="pad-box">
+                <div class="pad-line"></div>
+                <div class="pad-hint" id="padHint">Sign here with your finger</div>
+                <canvas id="pad" aria-label="Signature pad. Draw your signature here."></canvas>
+              </div>
+              <div class="pad-actions">
+                <span>By signing, you confirm you received the items above.</span>
+                <button type="button" class="btn-light" id="clearSig">Clear</button>
+              </div>
+            </div>
+            <div id="uploadPanel" role="tabpanel" hidden>
+              <label class="drop" id="drop">
+                <input type="file" id="sigFile" accept="image/png,.png">
+                <span class="drop-main">Choose a PNG picture of your signature</span>
+                <span class="drop-sub" id="dropSub"></span>
+              </label>
+              <div id="upPreview" hidden>
+                <div class="pad-box preview-box"><div class="pad-line preview-line"></div><img id="upImg" alt="Your uploaded signature, as it will appear on the slip"></div>
+                <div class="pad-actions"><span id="upInfo"></span><button type="button" class="btn-light" id="upRemove">Choose another</button></div>
+              </div>
+              <div class="up-checking" id="upChecking" hidden>Checking your file…</div>
+              <div class="up-err" id="upErr" role="alert" hidden></div>
+            </div>
+            <div class="err own" id="sigErr" style="text-align:center">Please sign inside the box.</div>
+          </div>
+          <div class="names">
+            <div data-field="name">
+              <label for="rName">Printed name *</label>
+              <input type="text" id="rName" autocomplete="name" autocapitalize="words" placeholder="Your full name">
+              <div class="err">Please enter your name.</div>
+            </div>
+            <div data-field="position">
+              <label for="rPos">Position</label>
+              <input type="text" id="rPos" autocomplete="organization-title" placeholder="(optional)">
+              <div class="err" id="fitErr"></div>
+            </div>
+          </div>
+          <div class="cap">Signature over Printed Name / Position</div>
+          <div class="date-line" id="today"></div>
+          <div class="cap" style="margin-top:2px">Date</div>
+          <div class="date-note">Set automatically when you submit.</div>
+        </div>
+      </div>
+    </div>
+    <div class="ref" id="ref"></div>
+
+    <div class="block">
+      <h2>Photos of the received items <span style="font-weight:normal;color:var(--muted)">(optional)</span></h2>
+      <p class="sub" id="photoSub"></p>
+      <div class="photos" id="photos"></div>
+      <div class="photo-msg" id="photoMsg" hidden></div>
+      <div class="photo-err" id="photoErr" role="alert" hidden></div>
+    </div>
+
+    <div class="block email" data-field="email">
+      <h2><label for="rEmail">Email me a copy <span style="font-weight:normal;color:var(--muted)">(optional)</span></label></h2>
+      <p class="sub">Your signed slip will be emailed to this address. Leave it blank if you don't need a copy.</p>
+      <input type="email" id="rEmail" autocomplete="email" inputmode="email" placeholder="name@example.com">
+      <div class="err">Please check your email address, or leave it blank.</div>
+    </div>
+
+    <div class="consent" data-field="consent">
+      <p id="privacy"></p>
+      <label><input type="checkbox" id="consent">
+        <span>I have read the privacy notice and I agree to the collection and processing of my information, signature and photos for these purposes.
+          <span style="color:var(--danger)">*</span></span>
+      </label>
+      <div class="err">Please tick the box to continue.</div>
+    </div>
+
+    <p class="form-error" id="formError" hidden></p>
+    <button type="submit" class="btn-primary" id="submitBtn">Acknowledge receipt</button>
+    <p class="problem">Something wrong with the items? Don't sign; contact the issuer.</p>
+  </form>
+
+  <!-- After acknowledging -->
+  <section class="msg" id="doneView" hidden>
+    <div class="icon ok">✓</div>
+    <h2>Receipt acknowledged</h2>
+    <p>Thank you. Your signed slip has been recorded.</p>
+    <p class="hint" style="margin:0">Reference No.</p>
+    <div class="ref-big" id="doneRef"></div>
+    <p id="doneEmail"></p>
+    <p class="hint">You may take a screenshot of this screen for your reference.</p>
+  </section>
+</main>
+
+<div class="busy" id="busy" role="alertdialog" aria-modal="true" aria-labelledby="busyTitle" aria-describedby="busySub" hidden>
+  <div class="busy-card">
+    <div class="spinner" aria-hidden="true"></div>
+    <p class="busy-title" id="busyTitle"></p>
+    <p class="busy-sub" id="busySub"></p>
+  </div>
+</div>
+
+<script>
+// =====================================================================
+// THE ONE LINE TO EDIT: paste your web app link (Apps Script > Deploy > Manage deployments > Web app URL, ending in /exec).
+var API = 'https://script.google.com/macros/s/AKfycbwNCVg4uMx8Pdt3sw-p-4RGvIl7oaR3uNxj9tCt70N6SvrX3qAaO80Tun1GghgX7E_q/exec';
+// =====================================================================
+
+// This page lives outside Google, so it opens the same way in every browser, whatever Google accounts are signed in.
+// It talks to the Apps Script web app in the background without sending any Google sign-in (credentials: 'omit').
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var q = new URLSearchParams(window.location.search);
+  var RIS = q.get('ris') || '', KEY = q.get('k') || '';
+  var apiOk = /^https:\/\/script\.google\.com\/(?:a\/macros\/[^\/]+|macros)\/s\/[\w-]+\/exec$/.test(API);
+
+  function call(method, url, body) {
+    var opts = { method: method, credentials: 'omit', cache: 'no-store', redirect: 'follow' };
+    if (body != null) { opts.body = JSON.stringify(body); opts.headers = { 'Content-Type': 'text/plain;charset=utf-8' }; }
+    return fetch(url, opts).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    });
+  }
+
+  // The rest of the page was written for google.script.run; this gives it the same shape.
+  function runner(ok, fail) {
+    return {
+      withSuccessHandler: function (f) { return runner(f, fail); },
+      withFailureHandler: function (f) { return runner(ok, f); },
+      submitAcknowledgment: function (data) {
+        call('POST', API, { action: 'ack', data: data }).then(function (res) {
+          if (res && res.ok) { if (ok) ok(res.value); }
+          else if (fail) fail(new Error((res && res.message) || 'Something went wrong. Please try again.'));
+        }, function () {
+          if (fail) fail(new Error('The connection was interrupted. Check your internet connection, then tap Acknowledge receipt again. ' +
+            'If your acknowledgment already went through, the page will say so.'));
+        });
+      }
+    };
+  }
+  window.google = { script: { run: runner(null, null), host: { close: function () {} } } };
+
+  function problem(title, text, retry) {
+    $('loadDot').hidden = true;
+    $('loadTitle').textContent = title;
+    $('loadText').textContent = text;
+    $('loadRetry').hidden = !retry;
+  }
+  function load() {
+    $('loadView').hidden = false;
+    $('loadDot').hidden = false;
+    $('loadTitle').textContent = 'Loading the slip…';
+    $('loadText').textContent = '';
+    $('loadRetry').hidden = true;
+    if (!apiOk) { problem('Not ready yet', 'This page is not connected to the RIS system yet. Please inform the issuer.', false); return; }
+    var url = API + '?action=view&ris=' + encodeURIComponent(RIS) + '&k=' + encodeURIComponent(KEY);
+    call('GET', url).then(function (view) {
+      if (!view || !view.state || view.state === 'error') {
+        problem('The slip could not be loaded', (view && view.message) || 'Please try again in a minute.', true);
+        return;
+      }
+      $('loadView').hidden = true;
+      startPage(view);
+    }, function () {
+      problem('The slip could not be loaded', 'Check your internet connection, then try again.', true);
+    });
+  }
+  $('loadRetry').addEventListener('click', load);
+  document.addEventListener('DOMContentLoaded', load);
+})();
+</script>
+<script>
+// The receiver page itself (the same code as Receive.html), started once the slip has loaded.
+function startPage(DATA) {
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+    });
+  };
+
+  // ---------- Which screen ----------
+  var MSG = {
+    invalid: ['bad', '!', 'This link is not valid', 'Please open the exact link you received from the issuer. If you copied it, make sure the whole link was copied.'],
+    notset: ['warn', '!', 'Not ready yet', 'This page is not set up yet. Please inform the issuer.'],
+    cancelled: ['bad', '×', 'This slip was cancelled', 'The issuer cancelled this slip, so it can no longer be signed. Please contact the issuer.'],
+    changed: ['bad', '!', 'This slip cannot be signed', 'It was changed after it was issued. Please contact the issuer for a new link.'],
+    saving: ['warn', '…', 'This slip is being saved', 'Someone is acknowledging this slip right now. Please wait a minute, then open the link again.'],
+    done: ['ok', '✓', 'Already acknowledged', 'This slip has already been acknowledged. There is nothing more to do.']
+  };
+  function showMsg(state, extra) {
+    var m = MSG[state] || MSG.invalid;
+    $('ackForm').hidden = true;
+    $('doneView').hidden = true;
+    $('msgView').hidden = false;
+    $('msgIcon').className = 'icon ' + m[0];
+    $('msgIcon').textContent = m[1];
+    $('msgTitle').textContent = m[2];
+    $('msgText').textContent = m[3];
+    $('msgHint').textContent = extra || (DATA.ris ? 'Reference No.: ' + DATA.ris : '');
+    window.scrollTo(0, 0);
+  }
+  if (DATA.state !== 'open') {
+    showMsg(DATA.state, DATA.state === 'done' && DATA.doneDate
+      ? 'Reference No.: ' + DATA.ris + (DATA.onPaper ? ' (signed on paper)' : ' (acknowledged on ' + DATA.doneDate + ')') : '');
+    return;
+  }
+
+  // ---------- Fill in the slip ----------
+  var S = DATA.slip;
+  $('ackForm').hidden = false;
+  $('division').textContent = S.division;
+  $('office').textContent = S.office;
+  $('purpose').textContent = S.purpose;
+  var rows = S.items.map(function (it) {
+    return '<tr><td class="c">' + esc(it.no) + '</td><td class="c">' + esc(it.unit) + '</td><td class="d">' + esc(it.description) +
+      '</td><td class="c">' + esc(it.qty) + '</td></tr>';
+  });
+  if (S.items.length < DATA.gridRows) rows.push('<tr class="nothing"><td colspan="4">**** Nothing follows ****</td></tr>');
+  for (var b = S.items.length + 1; b < DATA.gridRows; b++) rows.push('<tr class="blank"><td></td><td></td><td></td><td></td></tr>');
+  $('rows').innerHTML = rows.join('');
+  ['issuedName', 'issuedPosition', 'issuedDate', 'notedName', 'notedPosition', 'notedDate'].forEach(function (k) { $(k).textContent = S[k] || ''; });
+  $('ref').textContent = 'Reference No.: ' + S.ris;
+  $('today').textContent = DATA.today;
+  $('privacy').textContent = DATA.privacyNotice;
+  $('rName').maxLength = DATA.limits.NAME;
+  $('rPos').maxLength = DATA.limits.POSITION;
+  $('rEmail').maxLength = DATA.limits.EMAIL;
+  $('rEmail').value = DATA.prefillEmail || '';
+
+  // Width of "Name / Position" on the slip (Calibri, name in bold), as the server measures it.
+  function widthPt(str, pt, bold) {
+    var t = bold ? DATA.fit.bold : DATA.fit.regular, w = 0;
+    for (var i = 0; i < str.length; i++) { var c = str.charCodeAt(i); w += c >= 32 && c <= 126 ? t[c - 32] : (c === 160 ? 226 : 520); }
+    return w / 1000 * pt;
+  }
+  function lineWidthPt(name, position, pt) { return widthPt(name, pt, true) + (position ? widthPt(' / ' + position, pt, false) : 0); }
+
+  // ---------- Errors ----------
+  function setErr(field, on) { var el = document.querySelector('[data-field="' + field + '"]'); if (el) el.classList.toggle('has-error', on); }
+  function showFormError(msg) { $('formError').textContent = msg; $('formError').hidden = !msg; }
+  function clearFieldError(el) {
+    var f = el.closest && el.closest('[data-field]');
+    if (f) f.classList.remove('has-error');
+    if (!document.querySelector('.has-error')) showFormError('');
+  }
+  document.addEventListener('change', function (e) { clearFieldError(e.target); });
+  document.addEventListener('input', function (e) { clearFieldError(e.target); if (e.target.id === 'rName') clearFieldError($('rPos')); });
+
+  // ---------- Signature pad ----------
+  var pad = $('pad'), ctx = pad.getContext('2d');
+  var strokes = [], current = null;
+  function drawStrokes(c, fx, fy, lw) {
+    c.lineCap = 'round'; c.lineJoin = 'round'; c.strokeStyle = '#111'; c.fillStyle = '#111'; c.lineWidth = lw;
+    strokes.forEach(function (s) {
+      if (s.length === 1) { c.beginPath(); c.arc(fx(s[0][0]), fy(s[0][1]), lw / 2, 0, Math.PI * 2); c.fill(); return; }
+      c.beginPath(); c.moveTo(fx(s[0][0]), fy(s[0][1]));
+      for (var i = 1; i < s.length; i++) c.lineTo(fx(s[i][0]), fy(s[i][1]));
+      c.stroke();
+    });
+  }
+  function redraw() {
+    ctx.clearRect(0, 0, pad.width, pad.height);
+    var w = pad.width, h = pad.height;
+    drawStrokes(ctx, function (x) { return x * w; }, function (y) { return y * h; }, 2.5 * (window.devicePixelRatio || 1));
+    $('padHint').hidden = strokes.length > 0;
+  }
+  function sizePad() {
+    var r = pad.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    if (!r.width) return;
+    pad.width = Math.round(r.width * dpr); pad.height = Math.round(r.height * dpr);
+    redraw();
+  }
+  function point(e) {
+    var r = pad.getBoundingClientRect();
+    return [Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))];
+  }
+  function inkPoints() { return strokes.reduce(function (n, s) { return n + s.length; }, 0); }
+  pad.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    if (pad.setPointerCapture) pad.setPointerCapture(e.pointerId);
+    current = [point(e)]; strokes.push(current); redraw(); clearFieldError(pad);
+  });
+  pad.addEventListener('pointermove', function (e) { if (!current) return; e.preventDefault(); current.push(point(e)); redraw(); });
+  function endStroke() { current = null; }
+  pad.addEventListener('pointerup', endStroke);
+  pad.addEventListener('pointercancel', endStroke);
+  $('clearSig').addEventListener('click', function () { strokes = []; redraw(); });
+  if (window.ResizeObserver) new ResizeObserver(sizePad).observe(pad); else window.addEventListener('resize', sizePad);
+  sizePad();
+
+  // 600 x 200 PNG, signature trimmed and centred on a transparent background (the line on the PDF shows through).
+  function signatureDataUrl() {
+    var W = 600, H = 200, PAD = 10;
+    var r = pad.getBoundingClientRect();
+    var cw = r.width || 600, ch = r.height || 200;
+    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    strokes.forEach(function (s) { s.forEach(function (p) {
+      minX = Math.min(minX, p[0] * cw); maxX = Math.max(maxX, p[0] * cw); minY = Math.min(minY, p[1] * ch); maxY = Math.max(maxY, p[1] * ch);
+    }); });
+    var bw = Math.max(maxX - minX, 1), bh = Math.max(maxY - minY, 1);
+    var scale = Math.min((W - 2 * PAD) / bw, (H - 2 * PAD) / bh, 6);
+    var ox = (W - bw * scale) / 2 - minX * scale, oy = (H - bh * scale) / 2 - minY * scale;
+    var c = document.createElement('canvas'); c.width = W; c.height = H;
+    drawStrokes(c.getContext('2d'), function (px) { return px * cw * scale + ox; }, function (py) { return py * ch * scale + oy; },
+      Math.min(9, Math.max(4.5, 2.5 * scale)));
+    return c.toDataURL('image/png');
+  }
+
+  // ---------- Signature upload (PNG only), as in the CSS form ----------
+  var UP = DATA.upload || { allowed: false, maxMb: 2, maxBytes: 2097152 };
+  var LIMIT = { minW: 120, minH: 40, maxSide: 6000, maxPixels: 24000000 };
+  var sigMode = 'draw', uploadSig = null, uploadBusy = false, uploadToken = 0;
+  if (UP.allowed) {
+    $('sigMode').hidden = false;
+    $('dropSub').textContent = 'PNG files only, up to ' + UP.maxMb + ' MB. Dark ink on a white or transparent background, cropped close to the signature. ' +
+      'By uploading, you confirm it is your own signature.';
+  }
+  function setMode(m) {
+    sigMode = m;
+    $('modeDraw').setAttribute('aria-selected', String(m === 'draw'));
+    $('modeUpload').setAttribute('aria-selected', String(m === 'upload'));
+    $('drawPanel').hidden = m !== 'draw';
+    $('uploadPanel').hidden = m !== 'upload';
+    setErr('signature', false);
+    if (!document.querySelector('.has-error')) showFormError('');
+    if (m === 'draw') sizePad();
+  }
+  $('modeDraw').addEventListener('click', function () { setMode('draw'); });
+  $('modeUpload').addEventListener('click', function () { setMode('upload'); });
+  function showUpErr(title, detail) { $('upErr').innerHTML = title ? '<b>' + esc(title) + '</b>' + esc(detail || '') : ''; $('upErr').hidden = !title; }
+  function resetUpload() {
+    uploadToken++; uploadSig = null; uploadBusy = false;
+    $('sigFile').value = ''; $('upImg').removeAttribute('src');
+    $('upPreview').hidden = true; $('drop').hidden = false; $('upChecking').hidden = true; showUpErr('');
+  }
+  $('upRemove').addEventListener('click', function () { resetUpload(); $('sigFile').click(); });
+  function mb(bytes) { return (bytes / 1048576).toFixed(bytes < 104858 ? 2 : 1); }
+  function extOf(name) { var m = /\.([a-z0-9]{1,5})$/i.exec(name || ''); return m ? m[1].toLowerCase() : ''; }
+  function kindOf(file) {
+    var ext = extOf(file.name), t = (file.type || '').toLowerCase();
+    if (/jpe?g/.test(ext) || t === 'image/jpeg') return 'a JPG photo';
+    if (/hei[cf]/.test(ext) || /hei[cf]/.test(t)) return 'a HEIC photo (the iPhone camera format)';
+    if (ext === 'pdf' || t === 'application/pdf') return 'a PDF document';
+    if (ext === 'webp' || t === 'image/webp') return 'a WEBP image';
+    if (ext === 'gif' || t === 'image/gif') return 'a GIF image';
+    if (/^image\//.test(t)) return 'a ' + t.slice(6).toUpperCase() + ' image';
+    return ext ? 'a .' + ext + ' file' : 'not a PNG image';
+  }
+  var ERR = {
+    type: 'Only PNG files are accepted.', fake: 'This is not a real PNG image.', size: 'This file is too large.', empty: 'This file is empty.',
+    open: 'This PNG could not be opened.', dims: 'This image is too small.', huge: 'This image is too big to process.',
+    dark: 'The background is too dark.', photo: 'This looks like a photo, not a signature.', blank: 'No signature was found in this image.',
+    solid: 'This looks like a solid shape or logo, not a signature.', colors: 'This image has too many colours to be a signature.',
+    text: 'This looks like a page of text, not a signature.', shape: 'This does not have the shape of a signature.'
+  };
+  function readHead(file, n) {
+    return new Promise(function (resolve, reject) {
+      var fr = new FileReader();
+      fr.onload = function () { resolve(new Uint8Array(fr.result)); };
+      fr.onerror = function () { reject(fr.error); };
+      fr.readAsArrayBuffer(file.slice(0, n || 33));
+    });
+  }
+  function loadImage(blob) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(blob), img = new Image();
+      img.onload = function () { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('decode')); };
+      img.src = url;
+    });
+  }
+  function fail(key, detail) { var e = new Error(key); e.key = key; e.detail = detail; throw e; }
+  function handleFile(file) {
+    resetUpload();
+    if (!file) return;
+    var token = uploadToken;
+    clearFieldError($('sigFile'));
+    var name = file.name || 'This file';
+    Promise.resolve().then(function () {
+      var t = (file.type || '').toLowerCase();
+      if (extOf(file.name) !== 'png' || (t && t !== 'image/png')) fail('type', '"' + name + '" is ' + kindOf(file) + '. Save or export your signature as a PNG (.png) file and choose it again.');
+      if (file.size === 0) fail('empty', 'Choose the PNG of your signature again.');
+      if (file.size > UP.maxBytes) fail('size', 'It is ' + mb(file.size) + ' MB and the limit is ' + UP.maxMb + ' MB. Crop it close to the signature, or save it at a smaller size.');
+      uploadBusy = true; $('upChecking').hidden = false;
+      return readHead(file);
+    }).then(function (b) {
+      var sig = [137, 80, 78, 71, 13, 10, 26, 10];
+      for (var i = 0; i < 8; i++) if (b[i] !== sig[i]) fail('fake', '"' + name + '" ends in .png but its contents are a different format (it was probably renamed). Open it and use Save as / Export as PNG.');
+      var w = ((b[16] << 24) >>> 0) + (b[17] << 16) + (b[18] << 8) + b[19];
+      var h = ((b[20] << 24) >>> 0) + (b[21] << 16) + (b[22] << 8) + b[23];
+      if (w > LIMIT.maxSide || h > LIMIT.maxSide || w * h > LIMIT.maxPixels) fail('huge', 'It is ' + w + ' × ' + h + ' pixels. Use one no larger than ' + LIMIT.maxSide + ' pixels on each side.');
+      if (w < LIMIT.minW || h < LIMIT.minH) fail('dims', 'It is only ' + w + ' × ' + h + ' pixels, so the signature would print blurred. Use one at least ' + LIMIT.minW + ' × ' + LIMIT.minH + ' pixels.');
+      return loadImage(file).catch(function () { fail('open', 'The file may be damaged or incomplete. Save it again as PNG and retry.'); });
+    }).then(function (img) {
+      var a = analyse(img);
+      if (a.problem) fail(a.problem, a.detail);
+      return normalise(img, a);
+    }).then(function (dataUrl) {
+      if (token !== uploadToken) return;
+      uploadBusy = false; uploadSig = dataUrl;
+      $('upChecking').hidden = true; $('upImg').src = dataUrl;
+      $('upInfo').textContent = name + ' (' + mb(file.size) + ' MB). This is how it will appear on the slip.';
+      $('drop').hidden = true; $('upPreview').hidden = false;
+      setErr('signature', false);
+      if (!document.querySelector('.has-error')) showFormError('');
+    }).catch(function (e) {
+      if (token !== uploadToken) return;
+      uploadBusy = false; uploadSig = null; $('upChecking').hidden = true; $('sigFile').value = '';
+      if (e && e.key) showUpErr(ERR[e.key], ' ' + (e.detail || ''));
+      else showUpErr('This file could not be checked.', ' Please try another PNG, or draw your signature instead.');
+    });
+  }
+  $('sigFile').addEventListener('change', function () { handleFile(this.files && this.files[0]); });
+
+  function hueOf(r, g, b, bins) {
+    var mx = Math.max(r, g, b), mn = Math.min(r, g, b), c = mx - mn;
+    if (mx < 51 || c / mx <= 0.35) return;
+    var hh = mx === r ? ((g - b) / c) % 6 : mx === g ? (b - r) / c + 2 : (r - g) / c + 4;
+    bins[Math.floor(((hh * 60 + 360) % 360) / 30)]++;
+  }
+  // Does the uploaded picture look like a signature? Same checks as the CSS form.
+  function analyse(img) {
+    var iw = img.naturalWidth, ih = img.naturalHeight;
+    var s = Math.min(1, 1000 / Math.max(iw, ih));
+    var w = Math.max(1, Math.round(iw * s)), h = Math.max(1, Math.round(ih * s)), n = w * h;
+    var c = document.createElement('canvas'); c.width = w; c.height = h;
+    var x = c.getContext('2d', { willReadFrequently: true });
+    x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.drawImage(img, 0, 0, w, h);
+    var d = x.getImageData(0, 0, w, h).data;
+    var lum = function (i) { return 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; };
+    var band = Math.max(2, Math.round(Math.min(w, h) * 0.03)), R = [], G = [], B = [], border = [];
+    for (var yy = 0; yy < h; yy++) for (var xx = 0; xx < w; xx++) {
+      if (yy < band || yy >= h - band || xx < band || xx >= w - band) { var k = (yy * w + xx) * 4; R.push(d[k]); G.push(d[k + 1]); B.push(d[k + 2]); border.push(k); }
+    }
+    var med = function (a) { a.sort(function (p, q) { return p - q; }); return a[a.length >> 1]; };
+    var br = med(R), bg = med(G), bb = med(B), bgLum = 0.299 * br + 0.587 * bg + 0.114 * bb;
+    if (bgLum < 170) return { problem: 'dark', detail: 'Use a signature in dark ink on white paper or a transparent background, not white ink or a dark background.' };
+    var dist = function (i) { return Math.max(Math.abs(d[i] - br), Math.abs(d[i + 1] - bg), Math.abs(d[i + 2] - bb)); };
+    var borderBg = 0; border.forEach(function (k2) { if (dist(k2) <= 48) borderBg++; });
+    var inkMask = new Uint8Array(n), nBg = 0, nInk = 0, nMid = 0;
+    var minX = w, minY = h, maxX = -1, maxY = -1, colors = {}, hues = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    for (var i = 0, p = 0; p < n; p++, i += 4) {
+      var dd = dist(i);
+      if (dd <= 48) { nBg++; continue; }
+      if (dd >= 80 && lum(i) < bgLum - 50) {
+        inkMask[p] = 1; nInk++;
+        var px = p % w, py = (p / w) | 0;
+        if (px < minX) minX = px; if (px > maxX) maxX = px; if (py < minY) minY = py; if (py > maxY) maxY = py;
+        var key = (d[i] >> 5) * 64 + (d[i + 1] >> 5) * 8 + (d[i + 2] >> 5);
+        colors[key] = (colors[key] || 0) + 1;
+        hueOf(d[i], d[i + 1], d[i + 2], hues);
+      } else nMid++;
+    }
+    var photo = 'Upload a picture of only your signature on plain white paper or a transparent background, cropped close.';
+    if (borderBg / border.length < 0.75 || nBg / n < 0.55 || nMid / n > 0.2) return { problem: 'photo', detail: photo };
+    if (nInk < 150 || nInk / n < 0.002) return { problem: 'blank', detail: 'It may be empty, or the ink too light or too small to see. Use a clear signature in dark ink.' };
+    var bw = maxX - minX + 1, bh = maxY - minY + 1, edge = 0;
+    for (var q = 0; q < n; q++) {
+      if (!inkMask[q]) continue;
+      var qx = q % w, qy = (q / w) | 0;
+      if (qx === 0 || qy === 0 || qx === w - 1 || qy === h - 1 || !inkMask[q - 1] || !inkMask[q + 1] || !inkMask[q - w] || !inkMask[q + w]) edge++;
+    }
+    var thick = 2 * nInk / Math.max(edge, 1);
+    if (nInk / n > 0.3 || nInk / (bw * bh) > 0.45 || thick / bh > 0.2) return { problem: 'solid', detail: 'Signatures are thin pen lines. Upload a picture of your handwritten signature only.' };
+    var counts = Object.keys(colors).map(function (k3) { return colors[k3]; }).sort(function (a, b2) { return b2 - a; });
+    var covered = 0, buckets = 0;
+    while (covered < nInk * 0.9 && buckets < counts.length) covered += counts[buckets++];
+    var hueGroups = 0;
+    for (var hb = 0; hb < 12; hb++) { var on = hues[hb] / nInk >= 0.08, prevOn = hues[(hb + 11) % 12] / nInk >= 0.08; if (on && !prevOn) hueGroups++; }
+    if (hueGroups === 0 && hues.every(function (v2) { return v2 / nInk >= 0.08; })) hueGroups = 1;
+    if (buckets > 28 || hueGroups > 1) return { problem: 'colors', detail: 'Upload a signature written in one colour of ink (black or blue) on a plain background, without logos or stamps.' };
+    var seen = new Uint8Array(n), parts = 0, stack = [];
+    for (var r0 = 0; r0 < n; r0++) {
+      if (!inkMask[r0] || seen[r0]) continue;
+      var size = 0; stack.push(r0); seen[r0] = 1;
+      while (stack.length) {
+        var v = stack.pop(), vx = v % w, vy = (v / w) | 0; size++;
+        for (var oy = -1; oy <= 1; oy++) for (var ox = -1; ox <= 1; ox++) {
+          var nx = vx + ox, ny = vy + oy;
+          if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+          var nb = ny * w + nx;
+          if (inkMask[nb] && !seen[nb]) { seen[nb] = 1; stack.push(nb); }
+        }
+      }
+      if (size >= 4) parts++;
+    }
+    if (parts > 80) return { problem: 'text', detail: 'Crop the picture so it shows only your signature, without typed or printed text.' };
+    var aspect = bw / bh;
+    if (aspect < 0.5) return { problem: 'shape', detail: 'It is much taller than it is wide. Upload your signature written across, cropped close, and turned the right way up.' };
+    if (aspect > 25 || bh < 6) return { problem: 'shape', detail: 'It looks like a single line. Upload your full signature.' };
+    return { scale: s, bg: [br, bg, bb], box: [minX, minY, bw, bh] };
+  }
+  // Redraws the accepted signature as a clean 600 x 200 PNG in one ink colour on a transparent background.
+  function normalise(img, a) {
+    var W = 600, H = 200, PAD = 10, s = a.scale, m = 2 / s;
+    var sx = Math.max(0, a.box[0] / s - m), sy = Math.max(0, a.box[1] / s - m);
+    var sw = Math.min(img.naturalWidth - sx, a.box[2] / s + 2 * m), sh = Math.min(img.naturalHeight - sy, a.box[3] / s + 2 * m);
+    var k = Math.min((W - 2 * PAD) / sw, (H - 2 * PAD) / sh, 6), dw = sw * k, dh = sh * k;
+    var c = document.createElement('canvas'); c.width = W; c.height = H;
+    var x = c.getContext('2d', { willReadFrequently: true });
+    x.fillStyle = 'rgb(' + a.bg.join(',') + ')'; x.fillRect(0, 0, W, H);
+    x.imageSmoothingQuality = 'high';
+    x.drawImage(img, sx, sy, sw, sh, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    var id = x.getImageData(0, 0, W, H), d = id.data, n = W * H;
+    var bgLum = 0.299 * a.bg[0] + 0.587 * a.bg[1] + 0.114 * a.bg[2];
+    var lum = new Float32Array(n), dist = new Float32Array(n), inkLums = [];
+    for (var p = 0, i = 0; p < n; p++, i += 4) {
+      lum[p] = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+      dist[p] = Math.max(Math.abs(d[i] - a.bg[0]), Math.abs(d[i + 1] - a.bg[1]), Math.abs(d[i + 2] - a.bg[2]));
+      if (dist[p] >= 80 && lum[p] < bgLum - 50) inkLums.push(lum[p]);
+    }
+    inkLums.sort(function (p1, q1) { return p1 - q1; });
+    var cut = inkLums.length ? inkLums[Math.floor((inkLums.length - 1) / 3)] : 0;
+    var ir = 0, ig = 0, ib = 0, cnt = 0;
+    for (p = 0, i = 0; p < n; p++, i += 4) if (dist[p] >= 80 && lum[p] <= cut) { ir += d[i]; ig += d[i + 1]; ib += d[i + 2]; cnt++; }
+    if (!cnt) { ir = ig = ib = 17; cnt = 1; }
+    ir = Math.round(ir / cnt); ig = Math.round(ig / cnt); ib = Math.round(ib / cnt);
+    var span = Math.max(30, bgLum - (0.299 * ir + 0.587 * ig + 0.114 * ib));
+    for (p = 0, i = 0; p < n; p++, i += 4) {
+      var t = dist[p] <= 48 ? 0 : Math.min(1, Math.max(0, ((bgLum - lum[p]) / span - 0.12) / 0.88));
+      d[i] = ir; d[i + 1] = ig; d[i + 2] = ib; d[i + 3] = Math.round(t * 255);
+    }
+    x.putImageData(id, 0, 0);
+    return c.toDataURL('image/png');
+  }
+
+  // ---------- Photos of the received items ----------
+  // Any photo up to the size limit (JPG, PNG, HEIC from iPhones and some Android phones, WEBP...). Each one is
+  // turned the right way up, converted to JPEG and shrunk on the phone, so the upload is quick and fits on the PDF.
+  // HEIC photos the browser cannot open are converted with the heic-to library, loaded only when needed.
+  var PH = DATA.photos || { max: 2, maxMb: 10, maxBytes: 10485760, sendBytes: 2000000 };
+  var HEIC_LIB = 'https://cdn.jsdelivr.net/npm/heic-to@1.6.5/dist/iife/heic-to.js';
+  var photos = [], photoBusy = false;
+  $('photoSub').textContent = 'Up to ' + PH.max + ' photos, ' + PH.maxMb + ' MB each (JPG, PNG or HEIC). They are added to your signed slip.';
+
+  function renderPhotos() {
+    var html = '';
+    for (var i = 0; i < PH.max; i++) {
+      var p = photos[i];
+      if (p) {
+        html += '<div class="ph filled"><img src="' + p.dataUrl + '" alt="Photo ' + (i + 1) + '">' +
+          '<button type="button" class="rm" data-i="' + i + '" aria-label="Remove photo ' + (i + 1) + '">Remove</button>' +
+          '<div class="meta">' + esc(p.name) + '</div></div>';
+      } else if (i === photos.length) {
+        html += '<div class="ph"><label><input type="file" id="photoInput" accept="image/*" ' + (PH.max - photos.length > 1 ? 'multiple' : '') + '>' +
+          '+ Add photo<span>Take or choose a photo</span></label></div>';
+      } else {
+        html += '<div class="ph" aria-hidden="true"></div>';
+      }
+    }
+    $('photos').innerHTML = html;
+    var input = $('photoInput');
+    if (input) input.addEventListener('change', function () { addPhotos(Array.prototype.slice.call(this.files || [])); });
+    Array.prototype.forEach.call(document.querySelectorAll('.ph .rm'), function (btn) {
+      btn.addEventListener('click', function () { photos.splice(Number(btn.getAttribute('data-i')), 1); showPhotoErr(''); renderPhotos(); });
+    });
+  }
+  function showPhotoErr(title, detail) { $('photoErr').innerHTML = title ? '<b>' + esc(title) + '</b>' + esc(detail || '') : ''; $('photoErr').hidden = !title; }
+  function photoMsg(t) { $('photoMsg').textContent = t || ''; $('photoMsg').hidden = !t; }
+
+  function addPhotos(files) {
+    showPhotoErr('');
+    if (!files.length || photoBusy) return;
+    var room = PH.max - photos.length;
+    if (files.length > room) showPhotoErr('Only ' + PH.max + ' photos can be added.', ' The first ' + room + ' you chose were used.');
+    files = files.slice(0, room);
+    photoBusy = true;
+    var chain = Promise.resolve();
+    files.forEach(function (f) {
+      chain = chain.then(function () {
+        photoMsg('Preparing ' + (f.name || 'photo') + '…');
+        return preparePhoto(f).then(function (p) { photos.push(p); renderPhotos(); }, function (e) {
+          showPhotoErr(e && e.title ? e.title : 'This photo could not be used.', ' ' + String(e && e.detail ? e.detail : 'Please choose another photo.').trim());
+        });
+      });
+    });
+    chain.then(function () { photoBusy = false; photoMsg(''); renderPhotos(); });
+  }
+
+  function photoFail(title, detail) { var e = new Error(title); e.title = title; e.detail = detail; throw e; }
+
+  function isHeic(file, head) {
+    var ext = extOf(file.name), t = (file.type || '').toLowerCase();
+    if (/^(heic|heif|hif)$/.test(ext) || /hei[cf]/.test(t)) return true;
+    if (head && head.length >= 12 && String.fromCharCode(head[4], head[5], head[6], head[7]) === 'ftyp') {
+      var brand = String.fromCharCode(head[8], head[9], head[10], head[11]);
+      return /^(heic|heix|hevc|hevx|heim|heis|hevm|hevs|mif1|msf1)$/.test(brand);
+    }
+    return false;
+  }
+  var heicLoading = null;
+  function loadHeicLib() {
+    if (window.HeicTo) return Promise.resolve(window.HeicTo);
+    if (heicLoading) return heicLoading;
+    heicLoading = new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = HEIC_LIB;
+      s.onload = function () { window.HeicTo ? resolve(window.HeicTo) : reject(new Error('heic')); };
+      s.onerror = function () { heicLoading = null; reject(new Error('heic')); };
+      document.head.appendChild(s);
+    });
+    return heicLoading;
+  }
+
+  function preparePhoto(file) {
+    var name = file.name || 'Photo';
+    var heicTip = 'Choose another photo, or take a new one. On an iPhone you can also set Settings > Camera > Formats > Most Compatible.';
+    return Promise.resolve().then(function () {
+      var t = (file.type || '').toLowerCase(), ext = extOf(file.name);
+      if (/^video\//.test(t) || /^(mov|mp4|m4v|3gp|avi|hevc)$/.test(ext)) photoFail('"' + name + '" is a video.', ' Please choose a photo instead.');
+      if (t === 'application/pdf' || ext === 'pdf') photoFail('"' + name + '" is a PDF document.', ' Please choose a photo (JPG, PNG or HEIC).');
+      if (file.size === 0) photoFail('"' + name + '" is empty.', ' Please choose the photo again.');
+      if (file.size > PH.maxBytes) photoFail('"' + name + '" is too large.', ' It is ' + mb(file.size) + ' MB and the limit is ' + PH.maxMb + ' MB per photo. Choose a smaller photo.');
+      if (t && !/^image\//.test(t) && !/^(jpe?g|png|heic|heif|hif|webp|gif|bmp)$/.test(ext)) photoFail('"' + name + '" is not a photo.', ' Please choose a JPG, PNG or HEIC photo.');
+      return readHead(file, 16);
+    }).then(function (head) {
+      var heic = isHeic(file, head);
+      var viaLib = function () {
+        photoMsg('Converting ' + name + ' from HEIC…');
+        return loadHeicLib().catch(function () {
+          photoFail('This HEIC photo could not be converted.', ' The converter could not be loaded (check your internet connection). ' + heicTip);
+        }).then(function (HeicTo) {
+          return HeicTo({ blob: file, type: 'image/jpeg', quality: 0.92 }).catch(function () {
+            photoFail('This HEIC photo could not be converted on this phone.', ' ' + heicTip);
+          });
+        }).then(function (jpeg) { return loadImage(jpeg); });
+      };
+      // The browser opens the photo itself if it can (iPhones can open HEIC); otherwise the converter is used.
+      return loadImage(file).catch(function () {
+        if (heic) return viaLib();
+        photoFail('"' + name + '" could not be opened.', ' It may be damaged, or a format this phone cannot read. Please choose another photo.');
+      });
+    }).then(function (img) {
+      return shrink(img);
+    }).then(function (out) {
+      out.name = name;
+      return out;
+    });
+  }
+
+  // Longest side at most 1600 px, JPEG, under the upload size the server accepts.
+  function shrink(img) {
+    var w0 = img.naturalWidth, h0 = img.naturalHeight;
+    if (!w0 || !h0) photoFail('This photo could not be read.', ' Please choose another photo.');
+    // At most 1600 px on the long side and 1 megapixel (about 1150 x 870), then smaller or more compressed if needed.
+    var k0 = Math.min(1, 1600 / Math.max(w0, h0), Math.sqrt((PH.maxPixels || 1000000) / (w0 * h0)));
+    var tries = [[1, 0.85], [1, 0.72], [0.8, 0.7], [0.64, 0.65], [0.5, 0.6]];
+    var limit = Math.min(PH.sendBytes || 2000000, 1900000) * 0.9;
+    for (var i = 0; i < tries.length; i++) {
+      var k = k0 * tries[i][0];
+      var w = Math.max(1, Math.floor(w0 * k)), h = Math.max(1, Math.floor(h0 * k));
+      var c = document.createElement('canvas'); c.width = w; c.height = h;
+      var x = c.getContext('2d');
+      x.fillStyle = '#fff'; x.fillRect(0, 0, w, h);
+      x.imageSmoothingQuality = 'high';
+      x.drawImage(img, 0, 0, w, h);
+      var url = c.toDataURL('image/jpeg', tries[i][1]);
+      var bytes = Math.floor((url.length - url.indexOf(',') - 1) * 3 / 4);
+      if (bytes <= limit) return { dataUrl: url, w: w, h: h, bytes: bytes };
+    }
+    photoFail('This photo could not be made small enough.', ' Please choose another photo.');
+  }
+  renderPhotos();
+
+  // ---------- Validate and submit ----------
+  function collect() {
+    var errors = [];
+    var need = function (field, ok) { if (!ok) errors.push(field); setErr(field, !ok); };
+    var d = {
+      ris: DATA.ris, k: DATA.k, website: $('website').value,
+      name: $('rName').value.trim(), position: $('rPos').value.trim(), email: $('rEmail').value.trim(),
+      consent: $('consent').checked
+    };
+    if (sigMode === 'upload') {
+      $('sigErr').textContent = uploadBusy ? 'Please wait while your file is checked.' : 'Please upload a PNG of your signature that passes the check, or switch to Draw signature.';
+      need('signature', !!uploadSig);
+    } else {
+      $('sigErr').textContent = 'Please sign inside the box.';
+      need('signature', inkPoints() >= 6);
+    }
+    need('name', d.name.length >= 2);
+    var fits = d.name.length < 2 || lineWidthPt(d.name, d.position, 7) <= DATA.fit.maxPt;
+    $('fitErr').textContent = d.position
+      ? 'Your name and position are too long to fit on the signature line. Please shorten your position (for example, use an abbreviation).'
+      : 'Your name is too long to fit on the signature line. Please shorten it (for example, use your middle initial).';
+    need('position', fits);
+    need('email', !d.email || /^[^\s@,;<>"]+@[^\s@,;<>"]+\.[A-Za-z]{2,}$/.test(d.email));
+    need('consent', d.consent);
+    return { d: d, errors: errors };
+  }
+  function cleanMsg(err) {
+    var m = err && err.message ? err.message : String(err || '');
+    m = m.replace(/^(Exception|Error):\s*/i, '');
+    return m || 'Something went wrong. Please try again.';
+  }
+
+  var busy = false, busyTimer = null;
+  function onLeave(e) { e.preventDefault(); e.returnValue = ''; return ''; }
+  function setBusy(on, title, sub) {
+    busy = on;
+    var form = $('ackForm'), ctrls = form.querySelectorAll('input, textarea, button');
+    $('busy').hidden = !on;
+    clearTimeout(busyTimer);
+    if (on) {
+      $('busyTitle').textContent = title; $('busySub').textContent = sub;
+      if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+      form.setAttribute('inert', ''); form.setAttribute('aria-busy', 'true');
+      Array.prototype.forEach.call(ctrls, function (el) { el.setAttribute('data-was-disabled', el.disabled ? '1' : ''); el.disabled = true; });
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('beforeunload', onLeave);
+      busyTimer = setTimeout(function () {
+        $('busyTitle').textContent = 'Still working…';
+        $('busySub').textContent = 'The connection seems slow. Please keep this page open; your acknowledgment is still being saved.';
+      }, 25000);
+    } else {
+      form.removeAttribute('inert'); form.removeAttribute('aria-busy');
+      Array.prototype.forEach.call(ctrls, function (el) { el.disabled = el.getAttribute('data-was-disabled') === '1'; el.removeAttribute('data-was-disabled'); });
+      document.body.style.overflow = '';
+      window.removeEventListener('beforeunload', onLeave);
+    }
+  }
+
+  $('ackForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (busy) return;
+    showFormError('');
+    if (photoBusy) { showFormError('Please wait until your photos are ready.'); return; }
+    var res = collect();
+    if (res.errors.length) {
+      var first = document.querySelector('[data-field="' + res.errors[0] + '"]');
+      if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      showFormError('Please complete the items marked in red.');
+      return;
+    }
+    res.d.signatureMethod = sigMode === 'upload' ? 'uploaded' : 'drawn';
+    res.d.signature = sigMode === 'upload' ? uploadSig : signatureDataUrl();
+    res.d.photos = photos.map(function (p) { return { data: p.dataUrl, w: p.w, h: p.h, name: p.name }; });
+    setBusy(true, 'Sending your acknowledgment…', (photos.length ? 'Uploading your photos and preparing' : 'Preparing') +
+      ' your signed slip. This can take up to a minute. Please don\'t close this page or press Back.');
+    google.script.run
+      .withSuccessHandler(function (out) {
+        setBusy(false);
+        $('ackForm').hidden = true;
+        $('doneView').hidden = false;
+        $('doneRef').textContent = (out && out.ris) || DATA.ris;
+        $('doneEmail').textContent = out && out.emailed ? 'A copy was emailed to ' + out.emailed + '.' : 'The issuer has your signed slip.';
+        window.scrollTo(0, 0);
+      })
+      .withFailureHandler(function (err) {
+        setBusy(false);
+        var msg = cleanMsg(err);
+        if (msg.indexOf('[ALREADY_DONE]') !== -1) { showMsg('done'); return; }
+        if (msg.indexOf('[CHANGED]') !== -1) { showMsg('changed'); return; }
+        showFormError(msg);
+      })
+      .submitAcknowledgment(res.d);
+  });
+}
+</script>
+</body>
+</html>
